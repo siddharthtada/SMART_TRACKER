@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Tracker Portal</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;margin:0;padding:16px;}
+  .card{max-width:480px;margin:0 auto;background:#1e293b;border-radius:14px;padding:20px;}
+  h1{font-size:20px;margin:0 0 12px;text-align:center;}
+  .refresh{width:100%;margin-bottom:14px;padding:8px;border:none;border-radius:8px;background:#334155;color:#cbd5e1;font-size:13px;cursor:pointer;}
+  .tabs{display:flex;gap:6px;margin-bottom:18px;}
+  .tabs button{flex:1;padding:10px;border:none;border-radius:8px;background:#334155;color:#cbd5e1;font-size:14px;cursor:pointer;}
+  .tabs button.active{background:#3b82f6;color:#fff;}
+  label{display:block;font-size:13px;margin:12px 0 5px;color:#94a3b8;}
+  input,select{width:100%;padding:11px;border:1px solid #334155;border-radius:8px;background:#0f172a;color:#e2e8f0;font-size:15px;}
+  .submit{width:100%;margin-top:18px;padding:13px;border:none;border-radius:8px;background:#22c55e;color:#06210f;font-weight:700;font-size:15px;cursor:pointer;}
+  .submit:disabled{opacity:.6;}
+  .status{margin-top:14px;padding:11px;border-radius:8px;font-size:14px;text-align:center;display:none;}
+  .status.ok{display:block;background:#064e3b;color:#a7f3d0;}
+  .status.err{display:block;background:#7f1d1d;color:#fecaca;}
+  .status.info{display:block;background:#1e3a8a;color:#bfdbfe;}
+  .pane{display:none;} .pane.active{display:block;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🛠️ Smart Tracker Portal</h1>
+  <button class="refresh" onclick="loadLists()">↻ Refresh lists</button>
+  <div class="tabs">
+    <button id="t-draw" class="active" onclick="show('draw')">Drawing</button>
+    <button id="t-fu" onclick="show('fu')">Follow-up</button>
+    <button id="t-done" onclick="show('done')">Mark Done</button>
+  </div>
+  <div id="p-draw" class="pane active">
+    <label>Project</label><select id="d-project"></select>
+    <label>Drawing Type</label><select id="d-type"></select>
+    <label>With (Person)</label><select id="d-person"></select>
+    <label>Due Date</label><input type="date" id="d-date">
+    <button class="submit" onclick="submitDrawing(this)">Add Drawing</button>
+  </div>
+  <div id="p-fu" class="pane">
+    <label>Task</label><input type="text" id="f-task" placeholder="e.g. Tile delivery">
+    <label>With (Person)</label><select id="f-person"></select>
+    <label>Project (optional)</label><select id="f-project"></select>
+    <label>Due Date</label><input type="date" id="f-date">
+    <button class="submit" onclick="submitFollowUp(this)">Add Follow-up</button>
+  </div>
+  <div id="p-done" class="pane">
+    <label>Task ID (D5 / F3)</label><input type="text" id="x-id" placeholder="D5">
+    <button class="submit" onclick="submitDone(this)">Mark Done</button>
+  </div>
+  <div id="status" class="status"></div>
+</div>
+
+<script>
+// ===== STEP A: tamaro Apps Script /exec URL ahiya paste karo =====
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKqXMoLpY-JOYt-IJiT57P-oFmMAFKNg1sKtR3b8aoC0O0TH0bcCbJ3Cr31Q32jHb-qA/exec";   // <-- FILL
+
+function loadLists(){
+  setStatus("Loading lists...","info");
+  const s = document.createElement("script");
+  s.src = APPS_SCRIPT_URL + "?action=lists&callback=onLists&t=" + Date.now();
+  s.onerror = () => setStatus("⚠️ Lists load na thai. URL/deploy check karo.","err");
+  document.body.appendChild(s);
+}
+function onLists(data){
+  fill("d-project", data.clients);
+  fill("d-type", data.drawTypes);
+  fill("d-person", data.people);
+  fill("f-person", data.people);
+  fill("f-project", data.clients, true);
+  hideStatus();
+}
+function fill(id, arr, blank){
+  const s = document.getElementById(id);
+  s.innerHTML = blank ? '<option value="">-- none --</option>' : '';
+  (arr||[]).forEach(v => { const o=document.createElement("option"); o.value=v; o.textContent=v; s.appendChild(o); });
+}
+function show(w){ ["draw","fu","done"].forEach(k=>{
+  document.getElementById("p-"+k).classList.toggle("active",k===w);
+  document.getElementById("t-"+k).classList.toggle("active",k===w);
+}); hideStatus(); }
+function setStatus(m,c){ const s=document.getElementById("status"); s.textContent=m; s.className="status "+c; }
+function hideStatus(){ document.getElementById("status").className="status"; }
+function send(payload, btn, okMsg){
+  btn.disabled = true; setStatus("Saving...","info");
+  fetch(APPS_SCRIPT_URL, {
+    method:"POST", mode:"no-cors",
+    headers:{ "Content-Type":"text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  }).then(()=>setStatus(okMsg,"ok"))
+    .catch(()=>setStatus("⚠️ Network problem. Fari try karo.","err"))
+    .finally(()=>{ btn.disabled=false; });
+}
+function submitDrawing(b){
+  const p={ type:"drawing",
+    project:document.getElementById("d-project").value,
+    drawType:document.getElementById("d-type").value,
+    person:document.getElementById("d-person").value,
+    date:document.getElementById("d-date").value };
+  if(!p.project||!p.drawType||!p.person||!p.date){ setStatus("Badha field bharo.","err"); return; }
+  send(p,b,"✅ Drawing saved! Telegram check karo.");
+}
+function submitFollowUp(b){
+  const p={ type:"followup",
+    task:document.getElementById("f-task").value.trim(),
+    person:document.getElementById("f-person").value,
+    project:document.getElementById("f-project").value,
+    date:document.getElementById("f-date").value };
+  if(!p.task||!p.person||!p.date){ setStatus("Task, person ane date bharo.","err"); return; }
+  send(p,b,"✅ Follow-up saved! Telegram check karo.");
+}
+function submitDone(b){
+  const id=document.getElementById("x-id").value.trim();
+  if(!id){ setStatus("Task ID nakho.","err"); return; }
+  send({type:"done",taskId:id},b,"✅ Sent! Telegram check karo.");
+}
+loadLists();
+const today = new Date().toISOString().slice(0,10);
+document.getElementById("d-date").value = today;
+document.getElementById("f-date").value = today;
+</script>
+</body>
+</html>
