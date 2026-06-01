@@ -35,7 +35,7 @@
   </div>
   <div id="p-draw" class="pane active">
     <label>Project</label><select id="d-project"></select>
-    <label>Drawing Type</label><select id="d-type"></select>
+    <label>Drawing Type</label><input type="text" id="d-type" placeholder="e.g. Floor Plan">
     <label>With (Person)</label><select id="d-person"></select>
     <label>Due Date</label><input type="date" id="d-date">
     <button class="submit" onclick="submitDrawing(this)">Add Drawing</button>
@@ -67,7 +67,6 @@ function loadLists(){
 }
 function onLists(data){
   fill("d-project", data.clients);
-  fill("d-type", data.drawTypes);
   fill("d-person", data.people);
   fill("f-person", data.people);
   fill("f-project", data.clients, true);
