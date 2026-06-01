@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Smart Tracker Portal</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   *{box-sizing:border-box;}
   body{font-family:-apple-system,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;margin:0;padding:16px;}
@@ -55,6 +56,8 @@
 </div>
 
 <script>
+const tg = window.Telegram && window.Telegram.WebApp;     <-- AA 2 LINE ADD KARO
+if (tg) { tg.ready(); tg.expand(); } 
 // ===== STEP A: tamaro Apps Script /exec URL ahiya paste karo =====
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4f3D3W7kxST7gCq52sB7qRnyGlzWnhvSO3cl-ALqeFJEm9BqBpBMJ-fT1_51l_vAf/exec";   // <-- FILL
 
