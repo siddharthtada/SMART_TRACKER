@@ -50,6 +50,7 @@
   </div>
   <div id="p-done" class="pane">
     <label>Task ID (D5 / F3)</label><input type="text" id="x-id" placeholder="D5">
+    <label>Note (optional)</label><input type="text" id="x-note" placeholder="e.g. Approved by client">
     <button class="submit" onclick="submitDone(this)">Mark Done</button>
   </div>
   <div id="status" class="status"></div>
@@ -117,7 +118,7 @@ function submitFollowUp(b){
 function submitDone(b){
   const id=document.getElementById("x-id").value.trim();
   if(!id){ setStatus("Task ID nakho.","err"); return; }
-  send({type:"done",taskId:id},b,"✅ Sent! Telegram check karo.");
+  send({type:"done",taskId:id,note:document.getElementById("x-note").value.trim()},b,"✅ Sent! Telegram check karo.");
 }
 loadLists();
 const today = new Date().toISOString().slice(0,10);
